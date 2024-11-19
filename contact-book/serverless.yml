@@ -1,0 +1,59 @@
+service: contact-book
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.9
+  region: us-east-1
+  environment:
+    SECRET_KEY: ${env:SECRET_KEY, "default-secret"}  # Use environment variable for the secret key
+  memorySize: 128
+  timeout: 10
+
+functions:
+  getContacts:
+    handler: handler.get_contacts
+    events:
+      - http:
+          path: contacts
+          method: get
+          cors: true
+
+  addContact:
+    handler: handler.add_contact
+    events:
+      - http:
+          path: contacts
+          method: post
+          cors: true
+
+resources:
+  Resources:
+    ContactsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ContactBook
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    slim: true
+
+package:
+  exclude:
+    - node_modules/**
+    - .serverless/**
+    - .git/**
+    - tests/**
+
